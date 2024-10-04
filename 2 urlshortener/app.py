@@ -7,10 +7,13 @@ app = Flask(__name__)
 shortened_links = []
 
 def find_id(id: int):
+    global url
     global shortened_links
     for link in shortened_links:
         if link[0] == id:
+            link[2] += 1
             return link[1]
+        
     return None
 
 def works(url: str) -> bool:
@@ -21,20 +24,46 @@ def works(url: str) -> bool:
         return False
 
 @app.route("/analytics")
-def index():
+def stats():
     return render_template("analytics.html") # minimalistic page with  input field and submit button
 
 @app.route("/")
 def index():
     return render_template("index.html") # minimalistic page with  input field and submit button
 
+# backend api
+@app.route("/api/total-shortens", methods=["GET"])
+def totalsl():
+    global shortened_links
+    return jsonify({"total":  len(shortened_links)})
 
+# backend api
+@app.route("/api/most-recent-one", methods=["GET"])
+def msrol():
+    global shortened_links
+    rev = shortened_links[-1]
+    return jsonify({"id": rev[0], "url": rev[1]}) # by creation date newest
+
+# backend api
+@app.route("/api/top-clicked-on", methods=["GET"])
+def topclickedsl():
+    global shortened_links
+    highest = {"id":  0, "count": 0}
+    for listlink in shortened_links:
+        if listlink[2]  > highest["count"]:
+            highest["id"] = listlink[0]
+            highest["count"] = listlink[2]
+
+
+    return jsonify({"id":  highest["id"], "count":  highest["count"]})
+
+    
 @app.route("/api/shorten", methods=["POST"])
 def shorten_url():
     url = request.json.get("url")
     if works(url):
         id = random.randint(11111111, 99999999)
-        shortened_links.append([id, url])
+        shortened_links.append([id, url, 0])
         return jsonify({"success": True, "id": id})
     else:
         return jsonify({"success": False, "message": "Invalid URL"}), 400

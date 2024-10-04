@@ -54,21 +54,40 @@
             <p id="totalUrls">Loading...</p>
         </div>
         <div class="analytics-item">
-            <h2>Top Shortened URL</h2>
-            <p id="topUrl">Loading...</p>
-        </div>
-        <div class="analytics-item">
             <h2>Most Recent URL</h2>
             <p id="recentUrl">Loading...</p>
+        </div>
+        <div class="analytics-item">
+            <h2>Top Clicked URL</h2>
+            <p id="topUrl">Loading...</p>
         </div>
     </div>
     <a href="/" class="back-btn">Back to Home</a>
 
     <script>
-        // This will be updated with actual data when connected to a backend
-        document.getElementById('totalUrls').textContent = '5'; // Example data
-        document.getElementById('topUrl').textContent = '/sl/12345678'; // Example data
-        document.getElementById('recentUrl').textContent = '/sl/87654321'; // Example data
+        async function fetchAnalytics() {
+            // Fetch total shortened URLs
+            const totalResponse = await fetch('/api/total-shortens');
+            const totalData = await totalResponse.json();
+            document.getElementById('totalUrls').textContent = totalData.total;
+
+            // Fetch most recent shortened URL
+            const recentResponse = await fetch('/api/most-recent-one');
+            const recentData = await recentResponse.json();
+            document.getElementById('recentUrl').innerHTML = `<a href="/sl/${recentData.id}">/sl/${recentData.id}</a>`;
+
+            // Fetch top clicked URL
+            const topResponse = await fetch('/api/top-clicked-on');
+            const topData = await topResponse.json();
+            if (topData.id !== 0) {
+                document.getElementById('topUrl').innerHTML = `<a href="/sl/${topData.id}">/sl/${topData.id}</a> (${topData.count} clicks)`;
+            } else {
+                document.getElementById('topUrl').textContent = 'No clicks yet.';
+            }
+        }
+
+        // Call the function to load data on page load
+        fetchAnalytics();
     </script>
 </body>
 </html>
