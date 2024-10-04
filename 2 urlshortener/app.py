@@ -1,49 +1,51 @@
-from flask import Flask, request, render_template, jsonify, redirect
+from flask import Flask, request, render_template, jsonify, redirect, url_for
 import requests as reqs
 import random
 
 app = Flask(__name__)
 
-
 shortened_links = []
 
-def FindId(id: int):
+def find_id(id: int):
     global shortened_links
-    for i in range(len(shortened_links)):
-        if shortened_links[i][0] == id:
-            return shortened_links[i][1]
-            # returns site if the id is found
-    return "/notfound" # returns notfound route if not found
+    for link in shortened_links:
+        if link[0] == id:
+            return link[1]
+    return None
 
-def works(url: str) -> dict:
-    if 2 in reqs.get(url).status_code: # 2xxs – Success! The request was successfully completed and the server gave the browser the expected response.
-        return True
-    else:
+def works(url: str) -> bool:
+    try:
+        response = reqs.get(url, timeout=5)
+        return response.status_code // 100 == 2  # Check if it's a 2xx response since those are usualy successful ones
+    except reqs.RequestException:
         return False
-    
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html") # minimalistic page with  input field and submit button
 
-@app.route("/sl/<id>")
-def index():
-    return render_template(FindId(id), code=200)
 
-@app.route("/api/shorten?url=<url>")
-def  shorten_url(url):
-    global shortened_links
-    if works(url): # test response of the given site 
-        id = random.randint(11111111,  99999999)
+@app.route("/api/shorten", methods=["POST"])
+def shorten_url():
+    url = request.json.get("url")
+    if works(url):
+        id = random.randint(11111111, 99999999)
         shortened_links.append([id, url])
-        return jsonify({"positive": True, "id":  id})
+        return jsonify({"success": True, "id": id})
     else:
-        return jsonify({"positive": False})
+        return jsonify({"success": False, "message": "Invalid URL"}), 400
 
-if __name__ == "__name__":
+@app.route("/sl/<int:id>")
+def redirect_shortened(id):
+    url = find_id(id)
+    if url:
+        return redirect(url)
+    else:
+        return redirect(url_for('notfound'))
+
+@app.route("/notfound")
+def notfound():
+    return render_template("404.html"), 404
+
+if __name__ == "__main__":
     app.run(debug=True, port=2901)
-
-
-
-
-
