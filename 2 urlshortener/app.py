@@ -20,6 +20,10 @@ def works(url: str) -> bool:
     except reqs.RequestException:
         return False
 
+@app.route("/analytics")
+def index():
+    return render_template("analytics.html") # minimalistic page with  input field and submit button
+
 @app.route("/")
 def index():
     return render_template("index.html") # minimalistic page with  input field and submit button
